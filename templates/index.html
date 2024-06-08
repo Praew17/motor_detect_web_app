@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #2E2E2E;
+        }
+        .container {
+            display: flex;
+            padding: 20px;
+            margin-left: 300px;
+            background-color: #2E2E2E;
+            height: 100vh;
+        }
+        .column {
+            flex: 1;
+            margin-right: 20px;
+        }
+        .chart-container {
+            width: 1500px;
+            margin-bottom: 20px;
+        }
+        .spectrogram-image {
+            width: 100%;
+            height: auto;
+            
+        }
+        canvas#lineChart {
+            width: 100%;
+
+        
+        }
+        canvas#fftChart {
+            width: 100%;
+    
+        }
+        #predictedClassSection {
+            padding: 10px;
+            color: #FFEC59;
+            display: block;
+            font-size: 1.5em;
+            display: flex;
+            flex-direction: column; /* Change to column */
+            align-items: center; /* Center items horizontally */
+            justify-content: center; /* Center items vertically */
+            height: 20%;
+            margin-bottom: 20px; /* Add margin bottom */
+            background-color: #525151;
+        }
+        .menu {
+            height: 100vh;
+            width: 300px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #333;
+            color: #fff;
+            padding-top: 10px; /* adjust top padding to accommodate header height */
+            border-right: 2px solid #fff; /* Add border to the right side */
+            border-bottom: 2px solid #fff; /* Add border to the bottom side */
+        }
+        .menu ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .menu ul .logo {
+            text-align: center;
+            padding: 80px 0; /* Adjust the top and bottom padding */
+        }
+        .menu ul li {
+            padding: 30px 0;
+            text-align: center;
+            border-bottom: 3px solid #777777;
+        }
+    
+        .menu ul li a {
+            color: #FFFFFF;
+            text-decoration: none;
+    
+        }
+        .red-box {
+            background-color: #818181;
+            color: white;
+            width: 250px; /* Adjust width as needed */
+            height: 200px; /* Adjust height as needed */
+            position: absolute;
+            bottom: 100px;
+            left: 0;
+            right: 0;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .my-heading {
+            color: #EBDCDC;
+          }
+
+          #clock {
+            display: block;
+            font-size: 2em;
+            color: #59CEE2; /* Red color */
+            text-align: center; /* Center alignment */
+        }
+
+        #date {
+            display: block;
+            font-size: 2em;
+            color: #FF5C77; /* Red color */
+            text-align: center; /* Center alignment */
+        }
+        #Speed {
+            display: block;
+            font-size: 2em;
+            color: #4DD091; /* Red color */
+            text-align: center; /* Center alignment */
+        }
+        #Torque {
+            display: block;
+            font-size: 2em;
+            color: #EE9E27FD; /* Red color */
+            text-align: center; /* Center alignment */
+        }
+        .time-box {
+            padding: 20%;
+            display: flex;
+            flex-direction: column; /* Change to column */
+            align-items: center; /* Center items horizontally */
+            justify-content: center; /* Center items vertically */
+            height: 30%;
+            margin-bottom: 20px; /* Add margin bottom */
+            background-color: #292828;
+
+        
+        }
+    </style>
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="logo">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Logo_of_NECTEC.svg/2560px-Logo_of_NECTEC.svg.png" alt="Logo" style="height: 60px;"> <!-- Add your image here -->
+            </li>
+            <li><a href="/">Home</a></li>
+            <li><a href="/about">Overview Vibration</a></li>
+            <li><a href="/page3">History diagnosis</a></li>
+            <li><a href="/download">Download Data</a></li>
+
+    
+        </ul>
+    </div>
+    <div class="container">
+        <div class="column">
+            <!-- Data chart -->
+            <div class="chart-container">
+                <h3 class="my-heading">Vibration in Time Domain</h3>
+                <canvas id="lineChart" width="800" height="300"></canvas>
+            </div>
+            <!-- FFT chart -->
+            <div class="chart-container">
+                <h3 class="my-heading">Vibration in Frequency Domain</h3>
+                <canvas id="fftChart" width="800" height="300"></canvas>
+            </div>
+        </div>
+
+        <div class="column">
+            <!-- Predicted class section -->
+            <div class="time-box"> 
+                <h3 class="my-heading">Time</h3>
+                <div id="clock"></div>
+                <h3 class="my-heading">Date</h3>
+                <div id="date"></div>
+                <h3 class="my-heading">Speed</h3>
+                <div id="gauge"></div> 
+                <h3 class="my-heading">Torque</h3>
+                <div id="Torque"></div>
+            </div>
+                
+            <div>
+                <div id="predictedClassSection">
+                    <p class="my-heading">Predicted Class</p>
+                    <p id="predictedClassLabel"></p>
+                </div>
+            </div>
+            <!-- Spectrogram container -->
+            <div class="spectrogram-container">
+                <h3 class="my-heading">Signal Spectrogram</h3>
+                <img id="spectrogramImage" class="spectrogram-image" src="" alt="Spectrogram">
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+        var lineChart;
+        var fftChart;
+        var fftDataCombined = []; // Combined FFT data from all three series
+        var speed_;
+        var v2 = [];
+        var v3 = [];
+
+        socket.on('connect', function() {
+            console.log('Connected to server');
+        });
+
+        socket.on('data', function(data) {
+            var timestamps = data.map(function(item) { return item.timestamp; });
+            var values1 = data.map(function(item) { return item.V1; });
+            var values2 = data.map(function(item) { return item.V2; });
+            var values3 = data.map(function(item) { return item.V3; });
+            speed_ = data[data.length - 1].SP;
+            var torque_ = data[data.length - 1].T;
+            //document.getElementById('Speed').innerHTML = speed_;
+            document.getElementById('Torque').innerHTML = torque_;
+            
+            
+
+            if (!lineChart) {
+                var ctx = document.getElementById('lineChart').getContext('2d');
+                lineChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: timestamps,
+                        datasets: [{
+                            label: 'Vibration V1',
+                            data: values1,
+                            borderColor: 'rgb(75, 192, 192)',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Vibration V2',
+                            data: values2,
+                            borderColor: 'rgb(227, 77, 137)',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Vibration V3',
+                            data: values3,
+                            borderColor: 'rgb(86, 191, 95)',
+                            tension: 0.1
+                        }
+                        ]
+                    }
+                });
+            } else {
+                lineChart.data.labels = timestamps;
+                lineChart.data.datasets[0].data = values1;
+                lineChart.data.datasets[1].data = values2;
+                lineChart.data.datasets[2].data = values3;
+                lineChart.update();
+            }
+
+        });
+
+        socket.on('spectrogram', function(imageUrl) {
+            var img = document.getElementById('spectrogramImage');
+            img.src = imageUrl + '?' + new Date().getTime(); // Append timestamp to avoid caching
+        });
+
+        // Listen for the 'Predicted_class' event and update the predicted class label
+        socket.on('Predicted_class', function(predictedClass) {
+            var predictedClassLabel = document.getElementById('predictedClassLabel');
+            predictedClassLabel.textContent = predictedClass;
+        });
+
+        // Listen for the 'FFT' event and update the FFT chart
+        socket.on('FFT_V2', function(fftData) {
+            v2 = fftData.map(function(item) { return item.value; });
+        });
+
+        socket.on('FFT_V3', function(fftData) {
+            v3 = fftData.map(function(item) { return item.value; });
+        });
+
+        socket.on('FFT_V1', function(fftData) {
+            if (!fftChart) {
+                var ctx = document.getElementById('fftChart').getContext('2d');
+                fftChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: fftData.map(function(item) { return item.Hz; }),
+                        datasets: [{
+                            label: 'FFT Data 1',
+                            data: fftData.map(function(item) { return item.value; }),
+                            borderColor: 'rgb(75, 192, 192)',
+                            tension: 0.1
+                        },
+                        {   
+                        
+                        label: 'FFT Data 2',
+                        data: v2,
+                        borderColor: 'rgb(227, 77, 137)',
+                        tension: 0.1
+                     },
+                     {   
+                        
+                        label: 'FFT Data 3',
+                        data: v3,
+                        borderColor: 'rgb(86, 191, 95)',
+                        tension: 0.1
+                     },]
+                    }
+                });
+            } else {
+                fftChart.data.labels = fftData.map(function(item) { return item.Hz; });
+                fftChart.data.datasets[0].data = fftData.map(function(item) { return item.value; });
+                fftChart.data.datasets[1].data = v2;
+                fftChart.data.datasets[2].data = v3;
+                fftChart.update();
+            }
+        });
+
+        function updateTime() {
+            var currentTime = new Date();
+            var hours = currentTime.getHours();
+            var minutes = currentTime.getMinutes();
+            var seconds = currentTime.getSeconds();
+    
+            // Pad single digit minutes and seconds with leading zeros
+            minutes = (minutes < 10 ? "0" : "") + minutes;
+            seconds = (seconds < 10 ? "0" : "") + seconds;
+    
+            // Determine if it's AM or PM
+            var period = (hours < 12) ? "AM" : "PM";
+    
+            // Convert hours from 24-hour to 12-hour format
+            hours = (hours > 12) ? hours - 12 : hours;
+    
+            // Pad single digit hours with leading zeros
+            hours = (hours < 10 ? "0" : "") + hours;
+    
+            // Get the date
+            var day = currentTime.getDate();
+            var month = currentTime.getMonth() + 1; // Months are zero based
+            var year = currentTime.getFullYear();
+    
+            // Format the date
+            var formattedDate = month + "/" + day + "/" + year;
+    
+            // Display the time and date
+            document.getElementById('clock').innerHTML = hours + ":" + minutes + ":" + seconds + " " + period;
+            document.getElementById('date').innerHTML = formattedDate;
+        }
+    
+        // Update time every second
+        setInterval(updateTime, 1000);
+    
+        // Initial call to display time
+        updateTime();
+
+        function loadScript(url, callback) {
+            var script = document.createElement("script");
+            script.type = "text/javascript";
+            script.onload = callback;
+            script.src = url;
+            document.head.appendChild(script);
+        }
+
+        // Load Raphael first
+        loadScript("https://cdnjs.cloudflare.com/ajax/libs/raphael/2.3.0/raphael.min.js", function() {
+            // Then load JustGage
+            loadScript("https://cdn.jsdelivr.net/npm/justgage@1.4.0/dist/justgage.min.js", function() {
+                // Now both Raphael and JustGage are loaded, initialize the gauge
+                var gauge = new JustGage({
+                    id: "gauge",
+                    value: 0,
+                    min: 0,
+                    max: 50,
+                    title: "Gauge Title",
+                    valueFontColor: "#E7E3E4",
+                    valueFontSize: "24px",
+                    levelColors: ["#87F706", "#FDF031", "#C70808"],
+                    
+                });
+
+                function updateGauge() {
+                    gauge.refresh(speed_);
+                }
+
+                updateGauge(); // Call initially to set gauge
+                setInterval(updateGauge, 100); // Update every 500ms         
+
+            });
+        });
+
+
+
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #2E2E2E;
+        }
+        .container {
+            display: flex;
+            padding: 20px;
+            margin-left: 300px;
+            background-color: #2E2E2E;
+            height: 100vh;
+        }
+        .column {
+            flex: 1;
+            margin-right: 20px;
+            width: 48%
+            
+        }
+        .chart-container {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .spectrogram-image {
+            width: 100%;
+            height: auto;
+            
+        }
+        canvas#lineChart {
+            width: 100%;
+
+        
+        }
+        canvas#fftChart {
+            width: 100%;
+    
+        }
+        #predictedClassSection {
+            padding: 10px;
+            color: #D2D446;
+            display: block;
+            font-size: 1.5em;
+            display: flex;
+            flex-direction: column; /* Change to column */
+            align-items: center; /* Center items horizontally */
+            justify-content: center; /* Center items vertically */
+            height: 20%;
+            margin-bottom: 20px; /* Add margin bottom */
+            background-color: #525151;
+        }
+        .menu {
+            height: 100vh;
+            width: 300px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #333;
+            color: #fff;
+            padding-top: 10px; /* adjust top padding to accommodate header height */
+            border-right: 2px solid #fff; /* Add border to the right side */
+            border-bottom: 2px solid #fff; /* Add border to the bottom side */
+        }
+        .menu ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .menu ul .logo {
+            text-align: center;
+            padding: 80px 0; /* Adjust the top and bottom padding */
+        }
+        .menu ul li {
+            padding: 30px 0;
+            text-align: center;
+            border-bottom: 3px solid #777777;
+        }
+    
+        .menu ul li a {
+            color: #FFFFFF;
+            text-decoration: none;
+    
+        }
+        .red-box {
+            background-color: #333;
+            color: white;
+            width: 250px; /* Adjust width as needed */
+            height: 200px; /* Adjust height as needed */
+            position: absolute;
+            bottom: 100px;
+            left: 0;
+            right: 0;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .my-heading {
+            color: #EBDCDC;
+          }
+
+          #clock {
+            display: block;
+            font-size: 2em;
+            color: #59CEE2; /* Red color */
+            text-align: center; /* Center alignment */
+        }
+
+        #date {
+            display: block;
+            font-size: 2em;
+            color: #D378A5; /* Red color */
+            text-align: center; /* Center alignment */
+        }
+        .time-box {
+            padding: 20%;
+            display: flex;
+            flex-direction: column; /* Change to column */
+            align-items: center; /* Center items horizontally */
+            justify-content: center; /* Center items vertically */
+            height: 30%;
+            margin-bottom: 20px; /* Add margin bottom */
+            background-color: #292828;
+
+        
+        }
+        #predictedClassSection {
+            padding: 0px;
+            color: #FFEC59;
+            display: block;
+            font-size: 1.5em;
+            display: flex;
+            flex-direction: column; /* Change to column */
+            align-items: center; /* Center items horizontally */
+            justify-content: center; /* Center items vertically */
+            height: 100%;
+            
+        }
+        form {
+            width: 1000px;
+            height: auto;
+            font-size: 20px;
+            padding: 20px;
+            background-color: #444;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            color: #fff; /* Example color for text */
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+
+        button {
+            font-size: 20px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #666;
+            color: #FFF;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #888;
+        }
+
+        .datetime-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .datetime-group label {
+            font-size: 18px;
+        }
+        .datetime-group input[type="datetime-local"] {
+            width: 300px; /* Set a fixed width */
+            padding: 10px;
+            font-size: 18px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="logo">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Logo_of_NECTEC.svg/2560px-Logo_of_NECTEC.svg.png" alt="Logo" style="height: 60px;"> <!-- Add your image here -->
+            </li>
+            <li><a href="/">Home</a></li>
+            <li><a href="/about">Overview Vibration</a></li>
+            <li><a href="/page3">History diagnosis</a></li>
+            <li><a href="/download">Download Data</a></li>
+            <li class="red-box"> 
+                <div id="predictedClassSection">
+                    <p class="my-heading">Predicted Class</p>
+                    <p id="predictedClassLabel"></p>
+                </div>           
+               </li>
+    
+        </ul>
+    </div>
+    <div class="container">
+        <div style="margin-left: 20px" ><h1 style="color: #FFFFFF;">Download Data from History</h1></div>
+        <div style="margin-top: 100px; margin-left: -430px">
+        <form action="/download" method="POST">
+            <div class="checkbox-group">
+                <label><input type="checkbox" name="columns" value="id" checked> ID</label>
+                <label><input type="checkbox" name="columns" value="created_at" checked> Timestamp</label>
+                <label><input type="checkbox" name="columns" value="V1" checked> Vibration V1</label>
+                <label><input type="checkbox" name="columns" value="V2" checked> Vibration V2</label>
+                <label><input type="checkbox" name="columns" value="V3" checked> Vibration V3</label>
+                <label><input type="checkbox" name="columns" value="SP" checked> Speed</label>
+                <label><input type="checkbox" name="columns" value="T" checked> Torque</label>
+            </div>
+            <div class="datetime-group">
+                <label for="start">Start Date and Time:</label>
+                <input type="datetime-local" id="start" name="start">
+                <label for="end">End Date and Time:</label>
+                <input type="datetime-local" id="end" name="end">
+            </div>
+            <button type="submit">Download CSV File</button>
+        </form>
+    </div>
+    </div>
+    
+
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('connect', function() {
+            console.log('Connected to server');
+        });
+
+        // Listen for the 'Predicted_class' event and update the predicted class label
+        socket.on('Predicted_class', function(predictedClass) {
+            var predictedClassLabel = document.getElementById('predictedClassLabel');
+            predictedClassLabel.textContent = predictedClass;
+        });
+
+       
+    </script>
+</body>
+</html>

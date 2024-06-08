@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #2E2E2E;
+        }
+        .container {
+            display: flex;
+            padding: 20px;
+            margin-left: 300px;
+            background-color: #2E2E2E;
+            width: 100%;
+            height:100vh;
+            
+        }
+        .column {
+            flex: 1;
+            margin-right: 20px;
+        }
+        chart-container {
+            width: 1900px;
+            margin-bottom: 20px;
+        }
+        .spectrogram-image {
+            width: 100%;
+            height: auto;
+        }
+        canvas#lineChart {
+            width: 100%;
+        }
+        canvas#fftChart {
+            width: 100%;
+        }
+        #predictedClassSection {
+            padding: 10px;
+            color: #D2D446;
+            display: block;
+            font-size: 1.5em;
+            display: flex;
+            flex-direction: column; /* Change to column */
+            align-items: center; /* Center items horizontally */
+            justify-content: center; /* Center items vertically */
+            height: 20%;
+            margin-bottom: 20px; /* Add margin bottom */
+            background-color: #525151;
+        }
+        .menu {
+            height: 100vh;
+            width: 300px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #333;
+            color: #fff;
+            padding-top: 10px; /* adjust top padding to accommodate header height */
+            border-right: 2px solid #fff; /* Add border to the right side */
+            border-bottom: 2px solid #fff; /* Add border to the bottom side */
+        }
+        .menu ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .menu ul .logo {
+            text-align: center;
+            padding: 80px 0; /* Adjust the top and bottom padding */
+        }
+        .menu ul li {
+            padding: 30px 0;
+            text-align: center;
+            border-bottom: 3px solid #777777;
+        }
+        .menu ul li a {
+            color: #FFFFFF;
+            text-decoration: none;
+        }
+        .red-box {
+            background-color: #333;
+            color: white;
+            width: 250px; /* Adjust width as needed */
+            height: 200px; /* Adjust height as needed */
+            position: absolute;
+            bottom: 100px;
+            left: 0;
+            right: 0;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .my-heading {
+            color: #EBDCDC;
+        }
+        #clock {
+            display: block;
+            font-size: 2em;
+            color: #59CEE2; /* Red color */
+            text-align: center; /* Center alignment */
+        }
+        #date {
+            display: block;
+            font-size: 2em;
+            color: #FF5C77; /* Red color */
+            text-align: center; /* Center alignment */
+        }
+        #Speed {
+            display: block;
+            font-size: 2em;
+            color: #4DD091; /* Red color */
+            text-align: center; /* Center alignment */
+        }
+        #Torque {
+            display: block;
+            font-size: 2em;
+            color: #EE9E27FD; /* Red color */
+            text-align: center; /* Center alignment */
+        }
+        .time-box {
+            padding: 20%;
+            display: flex;
+            flex-direction: column; /* Change to column */
+            align-items: center; /* Center items horizontally */
+            justify-content: center; /* Center items vertically */
+            height: 30%;
+            margin-bottom: 20px; /* Add margin bottom */
+            background-color: #292828;
+        }
+        #predictedClassSection {
+            padding: 0px;
+            color: #FFEC59;
+            display: block;
+            font-size: 1.5em;
+            display: flex;
+            flex-direction: column; /* Change to column */
+            align-items: center; /* Center items horizontally */
+            justify-content: center; /* Center items vertically */
+            height: 100%;
+            
+        }
+    </style>
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="logo">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Logo_of_NECTEC.svg/2560px-Logo_of_NECTEC.svg.png" alt="Logo" style="height: 60px;"> <!-- Add your image here -->
+            </li>
+            <li><a href="/">Home</a></li>
+            <li><a href="/about">Overview Vibration</a></li>
+            <li><a href="/page3">History diagnosis</a></li>
+            <li><a href="/download">Download Data</a></li>
+            <li class="red-box"> 
+                <div id="predictedClassSection">
+                    <p class="my-heading">Predicted Class</p>
+                    <p id="predictedClassLabel"></p>
+                </div>           
+               </li>
+        </ul>
+    </div>
+<div class="container">
+
+        <div class="column">
+        <div id="plot"></div>
+ 
+        <div class="chart-container">
+            <h3 class="my-heading">Speed</h3>
+            <canvas id="lineChart" width="300" height="35"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3 class="my-heading">Torque</h3>
+            <canvas id="fftChart2" width="300" height="35"></canvas>
+        </div>
+    </div> 
+    <div class="column" style="margin-top: 270px; margin-left: 0px;">
+        <div style="color: #FF5733;"><p>1 Angular Misalignment</p></div>
+        <div style="color: #33FFB1;"><p>2 Combo</p></div>
+        <div style="color: #3388FF;"><p>3 Normal</p></div>
+        <div style="color: #FF33E9;"><p>4 Parallel Misalignment</p></div>
+        <div style="color: #33FF55;"><p>5 Unbalance and Angular Misalignment</p></div>
+        <div style="color: #FF33C1;"><p>6 Unbalance and Parallel Misalignment</p></div>
+        <div style="color: #FFD633;"><p>7 Unbalance</p></div>
+
+
+    </div>
+
+
+
+
+</div>
+
+
+    <script>
+
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        var lineChart;
+        var lineChart2;
+        var speed_;
+
+        socket.on('Predicted_class', function(predictedClass) {
+            var predictedClassLabel = document.getElementById('predictedClassLabel');
+            predictedClassLabel.textContent = predictedClass;
+        });
+
+        socket.on('pre_class', function(data) {
+            var timestamps = data.map(function(item) { return item.timestamp; });
+            var predictedClasses = data.map(function(item) { return item.class; });
+
+                // Sample data (replace with your own data)
+            var classNumberMap = {
+                    'Angular Misalignment': 1,
+                    'Combo': 2,
+                    'Normal': 3,
+                    'Parallel Misalignment': 4,
+                    'Unbalance and Angular Misalignment': 5,
+                    'Unbalance and Parallel Misalignment': 6,
+                    'Unbalance': 7
+            };
+            var classNumbers = predictedClasses.map(label => classNumberMap[label]);
+            console.log(classNumbers);
+
+            var colorMap = {
+                'Angular Misalignment': '#FF5733',
+                'Combo': '#33FFB1',
+                'Normal': '#3388FF',
+                'Parallel Misalignment': '#FF33E9',
+                'Unbalance and Angular Misalignment': '#33FF55',
+                'Unbalance and Parallel Misalignment': '#FF33C1',
+                'Unbalance': '#FFD633'
+            };
+
+            var labels = {
+                '#FF5733': 'Angular Misalignment',
+                '#33FFB1': 'Combo',
+                '#3388FF': 'Normal',
+                '#FF33E9': 'Parallel Misalignment',
+                '#33FF55': 'Unbalance and Angular Misalignment',
+                '#FF33C1': 'Unbalance and Parallel Misalignment',
+                '#FFD633': 'Unbalance'
+            };
+
+            var color_class = predictedClasses.map(label => colorMap[label]);
+
+            var trace = {
+                x: timestamps,
+                y: classNumbers, // Use the mapped numbers for y-values
+                mode: 'markers', // Scatter mode with markers
+                marker: {
+                    size: 40, // Varying marker sizes
+                    color: color_class, // Varying marker colors based on class numbers
+                    opacity: 0.6, // Set opacity
+                    symbol: 'square', // Marker symbol
+                },
+                        // Define legend labels
+                        // Define legend labels with class names
+                
+                text: predictedClasses
+            };
+
+
+            var data_plot = [trace];
+
+            var layout = {
+                title: 'Series Plot with Varying Attributes',
+                xaxis: { title: 'Timestamp' },
+                yaxis: { title: 'Class Number', range: [0, 8],        
+                tickfont: { size: 14 }, 
+                showgrid: true, // Show grid lines on the Y axis
+                gridcolor: '#CCCCCC', // Set custom grid color for Y axis
+                gridwidth: 1 
+                },
+                plot_bgcolor: '#2E2E2E', // Change the plot background color here
+                paper_bgcolor: '#2E2E2E', // Change the paper background color here
+                font: { color: '#FFFFFF', size: 16 }, // Change the font color here
+                width: 1650, // Set the width of the plot
+                height: 600, // Set the height of the plot
+                margin: { l: 50, r: 0, t: 50, b: 80 }, // Adjust margins to accommodate the border
+                border: { color: '#FFFFFF', width: 1, dash: 'solid' } // Border properties
+            };
+
+            Plotly.newPlot('plot', data_plot, layout);
+
+            
+               
+            });
+
+            socket.on('data', function(st) {
+                var timestamps = st.map(function(item) { return item.timestamp; });
+                var V1 = st.map(function(item) { return item.SP; });
+                var V2 = st.map(function(item) { return item.T; });
+
+                if (!lineChart) {
+                    var ctx = document.getElementById('lineChart').getContext('2d');
+                    lineChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: timestamps,
+                            datasets: [{
+                                label: 'Speed',
+                                data: V1,
+                                borderColor: 'rgb(80, 181, 88)',
+                                tension: 0.1
+                            }]
+                        }
+                    });
+                } else {
+                    lineChart.data.labels = timestamps;
+                    lineChart.data.datasets[0].data = V1;
+                    lineChart.update();
+    
+                }
+                if (!lineChart2) {
+                    var ctx2 = document.getElementById('fftChart2').getContext('2d');
+                    lineChart2 = new Chart(ctx2, {
+                        type: 'line',
+                        data: {
+                            labels: timestamps,
+                            datasets: [{
+                                label: 'Torque',
+                                data: V2,
+                                borderColor: 'rgb(80, 176, 181)',
+                                tension: 0.1
+                            }]
+                        }
+                        
+                    });
+                } else {
+                    lineChart2.data.labels = timestamps;
+                    lineChart2.data.datasets[0].data = V2;
+                    lineChart2.update();
+                }                   
+
+                });
+
+                
+
+            </script>
+</body>
+</html>

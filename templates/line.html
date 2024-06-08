@@ -1,0 +1,20 @@
+<html>
+    <body>
+        <h1>Download Data from MySQL</h1>
+        <form action="/download" method="POST">
+            <label><input type="checkbox" name="columns" value="id" checked> ID</label><br>
+            <label><input type="checkbox" name="columns" value="created_at" checked> Created At</label><br>
+            <label><input type="checkbox" name="columns" value="V1" checked> V1</label><br>
+            <label><input type="checkbox" name="columns" value="V2" checked> V2</label><br>
+            <label><input type="checkbox" name="columns" value="V3" checked> V3</label><br>
+            <label><input type="checkbox" name="columns" value="SP" checked> SP</label><br>
+            <label><input type="checkbox" name="columns" value="T" checked> T</label><br>
+            <br>
+            <label for="start">Start Date and Time:</label>
+            <input type="datetime-local" id="start" name="start"><br><br>
+            <label for="end">End Date and Time:</label>
+            <input type="datetime-local" id="end" name="end"><br><br>
+            <button type="submit">Download CSV File</button>
+        </form>
+    </body>
+</html><div style="margin-top: 300px;">
