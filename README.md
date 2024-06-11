@@ -22,6 +22,6 @@ page4
 
 
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/oSTB1n5Gk_8?si=1XWv7hGRNOWF1yu7&amp;start=17" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[![Watch the video](https://i.sstatic.net/Vp2cE.png)]([https://youtu.be/vt5fpE0bzSY](https://youtu.be/oSTB1n5Gk_8?si=bGDNXlhPQv4kH_Ol))
 
 
