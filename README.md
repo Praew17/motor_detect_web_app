@@ -20,6 +20,7 @@ page4
 
 
 
+                  click on the picture for watch video
 
 
 [![Watch the video](https://github.com/Praew17/motor_detect_web_app/assets/93908834/861b00ad-c14c-43e1-8b7d-9d9e06ac94ff)](https://youtu.be/oSTB1n5Gk_8?si=6ivT4WYX9beUml0L)
